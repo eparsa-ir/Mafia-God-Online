@@ -4,7 +4,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Player, Role, GamePhase, GunType, NightResult } from './types';
 import PlayerStatus from './components/PlayerStatus';
 import Log from './components/Log';
-import { MoonIcon, SunIcon, BanIcon, RefreshIcon, TimeIcon, SparklesIcon, GavelIcon, WhatsAppIcon, TelegramIcon } from './components/icons';
+import { MoonIcon, SunIcon, BanIcon, RefreshIcon, TimeIcon, SparklesIcon, GavelIcon, WhatsAppIcon, TelegramIcon, QuestionMarkCircleIcon } from './components/icons';
 
 const PLAYER_COUNT = 12;
 const MAFIA_COUNT = 4;
@@ -17,8 +17,23 @@ interface GameState {
     gamePhase: GamePhase;
 }
 
+const Footer = () => (
+  <footer className="text-center text-xs text-gray-500 py-2 flex flex-col items-center justify-center gap-2">
+      <span>Design with AI by <a href="https://eparsa.ir" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-red-500 transition-colors">eParsa.ir</a></span>
+      <div className="flex items-center gap-4">
+          <a href="https://api.whatsapp.com/send?phone=989393783832" target="_blank" rel="noopener noreferrer" title="WhatsApp" className="text-gray-400 hover:text-green-500 transition-colors">
+              <WhatsAppIcon className="h-5 w-5" />
+          </a>
+          <a href="https://t.me/spiderboy" target="_blank" rel="noopener noreferrer" title="Telegram" className="text-gray-400 hover:text-blue-500 transition-colors">
+              <TelegramIcon className="h-5 w-5" />
+          </a>
+      </div>
+  </footer>
+);
+
 const PlayerSetup: React.FC<{ onStart: (names: string[]) => void }> = ({ onStart }) => {
   const [names, setNames] = useState<string[]>(Array(PLAYER_COUNT).fill(''));
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   const handleNameChange = (index: number, name: string) => {
     const newNames = [...names];
@@ -40,30 +55,43 @@ const PlayerSetup: React.FC<{ onStart: (names: string[]) => void }> = ({ onStart
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 p-4">
-      <div className="w-full max-w-md bg-gray-800 p-8 rounded-lg shadow-2xl">
-        <h1 className="text-3xl font-bold text-center mb-6 text-red-500">مافیا مینیمال</h1>
-        <p className="text-center text-gray-400 mb-8">نام ۱۲ بازیکن را وارد کنید (خالی بگذارید برای نام پیش‌فرض)</p>
-        <div className="grid grid-cols-2 gap-4 mb-8">
-          {names.map((name, index) => (
-            <input
-              key={index}
-              type="text"
-              placeholder={`بازیکن ${index + 1}`}
-              value={name}
-              onChange={(e) => handleNameChange(index, e.target.value)}
-              className="bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-            />
-          ))}
-        </div>
-        <button
-          onClick={handleStart}
-          className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-md transition-colors"
-        >
-          شروع بازی
-        </button>
+    <>
+      <div className="flex flex-col min-h-screen bg-gray-900">
+        <main className="flex-grow flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-gray-800 p-8 rounded-lg shadow-2xl relative">
+            <button
+              onClick={() => setIsHelpOpen(true)}
+              className="absolute top-6 left-6 text-gray-400 hover:text-red-500 transition-colors"
+              title="راهنمای بازی"
+            >
+              <QuestionMarkCircleIcon className="h-7 w-7" />
+            </button>
+            <h1 className="text-3xl font-bold text-center mb-6 text-red-500">مافیا مینیمال</h1>
+            <p className="text-center text-gray-400 mb-8">نام ۱۲ بازیکن را وارد کنید (خالی بگذارید برای نام پیش‌فرض)</p>
+            <div className="grid grid-cols-2 gap-4 mb-8">
+              {names.map((name, index) => (
+                <input
+                  key={index}
+                  type="text"
+                  placeholder={`بازیکن ${index + 1}`}
+                  value={name}
+                  onChange={(e) => handleNameChange(index, e.target.value)}
+                  className="bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                />
+              ))}
+            </div>
+            <button
+              onClick={handleStart}
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-md transition-colors"
+            >
+              شروع بازی
+            </button>
+          </div>
+        </main>
+        <Footer />
       </div>
-    </div>
+      {isHelpOpen && <HelpModal onClose={() => setIsHelpOpen(false)} />}
+    </>
   );
 };
 
@@ -149,6 +177,7 @@ const RoleRevealPhase: React.FC<{
 
 const EndGameReport: React.FC<{ log: string[], players: Player[], onReset: () => void }> = ({ log, players, onReset }) => {
     const [copyStatus, setCopyStatus] = useState('کپی کردن گزارش');
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const finalLogMessage = log.find(l => l.includes("پیروز شد")) || "نتیجه نهایی ثبت نشد.";
 
     const handleCopy = () => {
@@ -163,23 +192,50 @@ const EndGameReport: React.FC<{ log: string[], players: Player[], onReset: () =>
     };
 
     return (
-        <div className="text-center p-8 bg-gray-800 rounded-lg">
-            <h2 className="text-3xl font-bold text-green-400 mb-4">بازی تمام شد!</h2>
-            <p className="text-xl mb-8" dangerouslySetInnerHTML={{ __html: finalLogMessage }} />
-            <div className="flex justify-center gap-4 mb-4">
-                 <button onClick={handleCopy} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors">
-                    {copyStatus}
-                </button>
-                <button onClick={onReset} className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition-colors flex items-center gap-2">
-                    <RefreshIcon className="h-4 w-4" />
-                    شروع بازی جدید
-                </button>
+        <>
+            <div className="text-center p-8 bg-gray-800 rounded-lg">
+                <h2 className="text-3xl font-bold text-green-400 mb-4">بازی تمام شد!</h2>
+                <p className="text-xl mb-8" dangerouslySetInnerHTML={{ __html: finalLogMessage }} />
+                <div className="flex justify-center gap-4 mb-4 flex-wrap">
+                    <button onClick={handleCopy} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors">
+                        {copyStatus}
+                    </button>
+                    <button onClick={() => setIsReportModalOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition-colors">
+                        مشاهده گزارش بازی
+                    </button>
+                    <button onClick={onReset} className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition-colors flex items-center gap-2">
+                        <RefreshIcon className="h-4 w-4" />
+                        شروع بازی جدید
+                    </button>
+                </div>
+                <h3 className="text-2xl font-bold mb-4">خلاصه گزارش بازی</h3>
+                <div className="text-left max-h-[50vh] overflow-y-auto bg-gray-900/50 p-4 rounded">
+                    <Log messages={log} />
+                </div>
             </div>
-            <h3 className="text-2xl font-bold mb-4">گزارش کامل بازی</h3>
-            <div className="text-left max-h-[50vh] overflow-y-auto bg-gray-900/50 p-4 rounded">
-                <Log messages={log} />
-            </div>
-        </div>
+
+            {isReportModalOpen && (
+                <div className="fixed inset-0 bg-gray-900/95 z-[100] p-4 sm:p-8 flex flex-col" role="dialog" aria-modal="true" aria-labelledby="report-title">
+                    <div className="flex justify-between items-center mb-4 flex-shrink-0">
+                        <h2 id="report-title" className="text-3xl font-bold text-green-400">گزارش کامل بازی</h2>
+                        <button 
+                            onClick={() => setIsReportModalOpen(false)} 
+                            className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+                            aria-label="بستن گزارش"
+                        >
+                            بستن
+                        </button>
+                    </div>
+                    <div className="flex-grow bg-gray-800 rounded-lg overflow-y-auto p-4">
+                        <div className="space-y-2 text-base">
+                            {log.map((msg, index) => (
+                                <p key={index} className="text-gray-300 border-b border-gray-700 pb-2 mb-2 last:border-b-0" dangerouslySetInnerHTML={{ __html: msg }} />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
     );
 };
 
@@ -219,8 +275,6 @@ const App: React.FC = () => {
   const [showRoles, setShowRoles] = useState(false);
   const [viewedPlayers, setViewedPlayers] = useState<Set<string>>(new Set());
   
-  const [nightMafiaAction, setNightMafiaAction] = useState<{ target: string; shooter: string } | null>(null);
-  const [nightMafiaSaves, setNightMafiaSaves] = useState<string[]>([]);
   const [nightIndividualActions, setNightIndividualActions] = useState<Record<string, { shot: string | null, save: string | null }>>({});
   const [nightResult, setNightResult] = useState<NightResult | null>(null);
   const [isKickModalOpen, setIsKickModalOpen] = useState(false);
@@ -228,10 +282,16 @@ const App: React.FC = () => {
   const [isTimeTravelModalOpen, setIsTimeTravelModalOpen] = useState(false);
   const [selectedHistoryIndex, setSelectedHistoryIndex] = useState<number | null>(null);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
-  const [isDefenseModalOpen, setIsDefenseModalOpen] = useState(false);
-  const [playerOnTrial, setPlayerOnTrial] = useState<Player | null>(null);
-  const [defenseTimer, setDefenseTimer] = useState(60);
   
+  const [nominationVotes, setNominationVotes] = useState<Record<string, number>>({});
+  const [playersOnTrial, setPlayersOnTrial] = useState<string[]>([]);
+  const [finalVotes, setFinalVotes] = useState<Record<string, number>>({});
+  
+  const [isPollModalOpen, setIsPollModalOpen] = useState(false);
+  const [pollResults, setPollResults] = useState<{ mafia: number, citizens: number } | null>(null);
+  const [gunshotResult, setGunshotResult] = useState<string | null>(null);
+  const [newGunsAlert, setNewGunsAlert] = useState<number | null>(null);
+
   const livingPlayers = players.filter(p => p.isAlive);
   const livingMafia = players.filter(p => p.isAlive && p.role === Role.MAFIA);
   const livingCitizens = players.filter(p => p.isAlive && p.role === Role.CITIZEN);
@@ -274,13 +334,6 @@ const App: React.FC = () => {
     }
   }, [players, gamePhase, day, log, pollUsed, history]);
 
-  useEffect(() => {
-    if (isDefenseModalOpen && defenseTimer > 0) {
-      const timerId = setTimeout(() => setDefenseTimer(defenseTimer - 1), 1000);
-      return () => clearTimeout(timerId);
-    }
-  }, [isDefenseModalOpen, defenseTimer]);
-
   const handleResetGame = () => {
     localStorage.removeItem('mafiaGameState');
     localStorage.removeItem('showRoles');
@@ -290,8 +343,6 @@ const App: React.FC = () => {
     setLog([]);
     setPollUsed(0);
     setHistory([]);
-    setNightMafiaAction(null);
-    setNightMafiaSaves([]);
     setNightIndividualActions({});
     setNightResult(null);
     setIsKickModalOpen(false);
@@ -301,8 +352,9 @@ const App: React.FC = () => {
     setShowRoles(false);
     setViewedPlayers(new Set());
     setIsResetModalOpen(false);
-    setIsDefenseModalOpen(false);
-    setPlayerOnTrial(null);
+    setNominationVotes({});
+    setPlayersOnTrial([]);
+    setFinalVotes({});
   };
 
   const handleGameStart = (names: string[]) => {
@@ -350,10 +402,11 @@ const App: React.FC = () => {
     setLog(prev => prev.slice(0, stateToRestore.logLength));
     setHistory(newHistory);
     
-    setNightMafiaAction(null);
-    setNightMafiaSaves([]);
     setNightIndividualActions({});
     setNightResult(null);
+    setNominationVotes({});
+    setPlayersOnTrial([]);
+    setFinalVotes({});
     
     setIsTimeTravelModalOpen(false);
     setSelectedHistoryIndex(null);
@@ -365,26 +418,18 @@ const App: React.FC = () => {
         players: JSON.parse(JSON.stringify(players)),
         day: 1,
         pollUsed: 0,
-        gamePhase: GamePhase.DAY,
+        gamePhase: GamePhase.DAY_VOTE_NOMINATION,
         logLength: log.length,
     };
     setHistory([snapshot]);
     setDay(1);
-    setGamePhase(GamePhase.DAY);
+    setGamePhase(GamePhase.DAY_VOTE_NOMINATION);
     addLog(`روز 1 آغاز شد.`);
   };
 
-  const handleMafiaActionSubmit = (target: string | null, shooter: string | null, saves: string[]) => {
-    if (target && shooter) {
-        setNightMafiaAction({ target, shooter });
-        setPlayers(prevPlayers => prevPlayers.map(p => p.name === shooter ? { ...p, hasGun: false } : p));
-        addLog(`مافیا تصمیمات خود را گرفت. شات به <strong class='text-yellow-400'>${target}</strong> توسط <strong class='text-red-400'>${shooter}</strong>. سیو مافیا: ${saves.length > 0 ? saves.map(s => `<strong class='text-green-400'>${s}</strong>`).join(', ') : 'هیچ'}.`);
-    } else {
-        setNightMafiaAction(null);
-        addLog(`مافیا امشب شلیک نکرد. سیو مافیا: ${saves.length > 0 ? saves.map(s => `<strong class='text-green-400'>${s}</strong>`).join(', ') : 'هیچ'}.`);
-    }
-    setNightMafiaSaves(saves);
+  const handleConsultationEnd = () => {
     setGamePhase(GamePhase.NIGHT_IND_ACTION);
+    addLog("زمان مشورت مافیا به پایان رسید. عملیات انفرادی آغاز می‌شود.");
   };
   
   const processNight = useCallback((individualActions: Record<string, { shot: string | null; save: string | null; }>) => {
@@ -395,54 +440,35 @@ const App: React.FC = () => {
 
     const getPlayer = (name: string) => currentPlayers.find(p => p.name === name);
 
-    // 1. Apply Mafia saves
-    nightMafiaSaves.forEach(targetName => {
-      saves[targetName] = (saves[targetName] || 0) + 1;
-      const saver = livingMafia.find(m => m.hasSave && nightMafiaSaves.includes(m.name)); 
-      if (saver) {
-        const p = getPlayer(saver.name);
-        if(p && p.hasSave) {
-          p.hasSave = false;
-          nightLog.push(`<strong class='text-red-400'>${saver.name} (مافیا)</strong> از سیو خود برای <strong class='text-green-400'>${targetName}</strong> استفاده کرد.`);
-        }
-      }
-    });
-
-    // 2. Apply individual saves
+    // 1. Process all saves first
     Object.entries(individualActions).forEach(([saverName, action]) => {
       if (action.save) {
-        saves[action.save] = (saves[action.save] || 0) + 1;
-        const p = getPlayer(saverName);
-        if(p && p.hasSave) {
-          p.hasSave = false;
-           nightLog.push(`<strong class='text-blue-400'>${saverName}</strong> از سیو خود برای <strong class='text-green-400'>${action.save}</strong> استفاده کرد.`);
+        const saverPlayer = getPlayer(saverName);
+        if (saverPlayer && saverPlayer.hasSave) {
+          saves[action.save] = (saves[action.save] || 0) + 1;
+          saverPlayer.hasSave = false;
+          const saverColor = saverPlayer.role === Role.MAFIA ? 'text-red-400' : 'text-blue-400';
+          nightLog.push(`<strong class='${saverColor}'>${saverName}</strong> از سیو خود برای <strong class='text-green-400'>${action.save}</strong> استفاده کرد.`);
         }
       }
     });
 
-    // 3. Register Mafia shot
-    if (nightMafiaAction) {
-      shots[nightMafiaAction.target] = { count: 1, shooters: [{name: nightMafiaAction.shooter, role: Role.MAFIA}] };
-      const shooterPlayer = getPlayer(nightMafiaAction.shooter);
-      if (shooterPlayer) shooterPlayer.hasGun = false;
-      nightLog.push(`<strong class='text-red-400'>${nightMafiaAction.shooter}</strong> به <strong class='text-yellow-400'>${nightMafiaAction.target}</strong> شلیک کرد.`);
-    }
-
-    // 4. Register individual shots
+    // 2. Process all shots
     Object.entries(individualActions).forEach(([shooterName, action]) => {
       if (action.shot) {
         const shooterPlayer = getPlayer(shooterName);
-        if (shooterPlayer && shooterPlayer.role === Role.CITIZEN && shooterPlayer.hasGun) {
+        if (shooterPlayer && shooterPlayer.hasGun) {
             shooterPlayer.hasGun = false;
             if (!shots[action.shot]) shots[action.shot] = { count: 0, shooters: [] };
             shots[action.shot].count++;
             shots[action.shot].shooters.push({name: shooterName, role: shooterPlayer.role});
-            nightLog.push(`<strong class='text-blue-400'>${shooterName}</strong> به <strong class='text-yellow-400'>${action.shot}</strong> شلیک کرد.`);
+            const shooterColor = shooterPlayer.role === Role.MAFIA ? 'text-red-400' : 'text-blue-400';
+            nightLog.push(`<strong class='${shooterColor}'>${shooterName}</strong> به <strong class='text-yellow-400'>${action.shot}</strong> شلیک کرد.`);
         }
       }
     });
 
-    // 5. Determine eliminations
+    // 3. Determine eliminations
     let eliminated: { player: Player, reason: string }[] = [];
     
     Object.entries(shots).forEach(([targetName, shotData]) => {
@@ -477,8 +503,6 @@ const App: React.FC = () => {
       }
     });
     
-    setNightMafiaAction(null);
-    setNightMafiaSaves([]);
     setNightIndividualActions({});
 
     const result: NightResult = {
@@ -490,10 +514,9 @@ const App: React.FC = () => {
     setNightResult(result);
     setPlayers(currentPlayers);
     setGamePhase(GamePhase.NIGHT_GUN_TRANSFER);
-  }, [players, nightMafiaAction, nightMafiaSaves, livingMafia]);
+  }, [players]);
 
   const handleIndividualActionSubmit = (actions: Record<string, { shot: string | null; save: string | null; }>) => {
-    setNightIndividualActions(actions);
     addLog("اقدامات انفرادی بازیکنان ثبت شد. در حال محاسبه نتایج شب...");
     processNight(actions);
   };
@@ -516,27 +539,31 @@ const App: React.FC = () => {
         }
     });
     
+    if (checkWinCondition()) return;
+    
     const snapshot: GameState = {
         players: JSON.parse(JSON.stringify(currentPlayers)),
         day: day + 1,
         pollUsed,
-        gamePhase: GamePhase.DAY,
+        gamePhase: GamePhase.DAY_VOTE_NOMINATION,
         logLength: newLog.length,
     };
     setHistory(prev => [...prev, snapshot]);
 
     setPlayers(currentPlayers);
-    
-    if (checkWinCondition()) return;
-
     setDay(day + 1);
-    setGamePhase(GamePhase.DAY);
+    setGamePhase(GamePhase.DAY_VOTE_NOMINATION);
+    setNominationVotes({});
+    setPlayersOnTrial([]);
+    setFinalVotes({});
+
 
     const eliminatedNames = nightResult?.eliminated.map(e => `<strong>${e.player.name}</strong> (${e.reason})`).join(', ') || 'هیچکس';
     newLog.push(`روز ${day + 1} آغاز شد. کشته‌های شب: ${eliminatedNames}.`);
     const gunsGiven = transfers.filter(t => t.to && t.gunType && currentPlayers.find(p=>p.name === t.to)?.isAlive).length;
     if(gunsGiven > 0) {
         newLog.push(`<strong class='text-purple-400'>${gunsGiven} اسلحه جدید وارد بازی شد.</strong>`);
+        setNewGunsAlert(gunsGiven);
     }
     setLog(newLog);
   };
@@ -545,7 +572,9 @@ const App: React.FC = () => {
       if (pollUsed < 2) {
           const eliminatedMafia = players.filter(p => !p.isAlive && p.role === Role.MAFIA).length;
           const eliminatedCitizens = players.filter(p => !p.isAlive && p.role === Role.CITIZEN).length;
-          addLog(`<strong>نتیجه استعلام:</strong> <strong class='text-red-400'>${eliminatedMafia} مافیا</strong> و <strong class='text-blue-400'>${eliminatedCitizens} شهروند</strong> حذف شده‌اند.`);
+          addLog(`گرداننده از استعلام استفاده کرد.`);
+          setPollResults({ mafia: eliminatedMafia, citizens: eliminatedCitizens });
+          setIsPollModalOpen(true);
           setPollUsed(pollUsed + 1);
       }
   };
@@ -563,60 +592,117 @@ const App: React.FC = () => {
     newGuns.splice(gunIndex, 1);
     updatedPlayers[shooterIndex] = {...updatedPlayers[shooterIndex], receivedGuns: newGuns};
 
+    let alertMessage = '';
     if (targetName === null) {
-        addLog(`<strong class='text-purple-400'>${shooterName}</strong> با اسلحه روز (${gunType}) یک <strong class='text-gray-400'>تیر هوایی</strong> شلیک کرد.`);
+        alertMessage = `<strong class='text-purple-400'>${shooterName}</strong> با اسلحه روز (${gunType}) یک <strong class='text-gray-400'>تیر هوایی</strong> شلیک کرد.`;
+        addLog(alertMessage);
     } else if (gunType === GunType.CORRECT) {
         const targetIndex = updatedPlayers.findIndex(p => p.name === targetName);
         if (targetIndex > -1) {
             updatedPlayers[targetIndex] = {...updatedPlayers[targetIndex], isAlive: false};
-            addLog(`<strong class='text-green-500'>شلیک موفق!</strong> <strong class='text-purple-400'>${shooterName}</strong> با اسلحه روز به <strong class='text-yellow-400'>${targetName}</strong> شلیک کرد و او را حذف کرد.`);
+            alertMessage = `<strong class='text-green-500'>شلیک موفق!</strong> <strong class='text-purple-400'>${shooterName}</strong> با اسلحه روز به <strong class='text-yellow-400'>${targetName}</strong> شلیک کرد و او را حذف کرد.`;
+            addLog(alertMessage);
         }
     } else { // SABOTAGED
         updatedPlayers[shooterIndex] = {...updatedPlayers[shooterIndex], isAlive: false};
-        addLog(`<strong class='text-red-500'>شلیک ناموفق!</strong> <strong class='text-purple-400'>${shooterName}</strong> با اسلحه خراب به <strong class='text-yellow-400'>${targetName}</strong> شلیک کرد و خودش حذف شد.`);
+        alertMessage = `<strong class='text-red-500'>شلیک ناموفق!</strong> <strong class='text-purple-400'>${shooterName}</strong> با اسلحه خراب به <strong class='text-yellow-400'>${targetName}</strong> شلیک کرد و خودش حذف شد.`;
+        addLog(alertMessage);
     }
     setPlayers(updatedPlayers);
-  };
-  
-  const handleStartTrial = (playerName: string) => {
-    const player = livingPlayers.find(p => p.name === playerName);
-    if (player) {
-        setPlayerOnTrial(player);
-        setDefenseTimer(60);
-        setIsDefenseModalOpen(true);
-        addLog(`<strong class='text-yellow-400'>${playerName}</strong> برای دفاع به جایگاه فراخوانده شد.`);
+    if (alertMessage) {
+        setGunshotResult(alertMessage);
     }
   };
 
-  const handleEliminationByVote = (votedOutName: string) => {
-      setPlayers(players.map(p => p.name === votedOutName ? {...p, isAlive: false} : p));
-      addLog(`<strong class='text-yellow-400'>${votedOutName}</strong> با رای‌گیری در روز حذف شد.`);
-      addLog(`<strong>پایان روز ${day}.</strong> وصیت بازیکن شنیده می‌شود.`);
-      setIsDefenseModalOpen(false);
-      setPlayerOnTrial(null);
-  };
-  
-  const handleAcquitPlayer = () => {
-    if (playerOnTrial) {
-        addLog(`<strong class='text-green-400'>${playerOnTrial.name}</strong> توسط گرداننده تبرئه شد و در بازی باقی ماند.`);
+  const handleEndNominations = () => {
+    const votesNeeded = Math.ceil(livingPlayers.length / 2);
+    const trialists = Object.entries(nominationVotes)
+        // Fix: Cast `count` to number to resolve TypeScript error.
+        .filter(([_, count]) => (count as number) >= votesNeeded)
+        .map(([name, _]) => name);
+
+    if (trialists.length > 0) {
+        setPlayersOnTrial(trialists);
+        addLog(`بازیکنان در معرض اتهام: ${trialists.map(t => `<strong class="text-yellow-300">${t}</strong>`).join(', ')}. دفاعیه آغاز می‌شود.`);
+        setGamePhase(GamePhase.DAY_TRIAL);
+    } else {
+        addLog("هیچ بازیکنی رای کافی برای دفاعیه را کسب نکرد.");
+        handleEndDay(false);
     }
-    setIsDefenseModalOpen(false);
-    setPlayerOnTrial(null);
   };
 
-  const handleEndDay = () => {
+  const handleTrialEnd = () => {
+    setGamePhase(GamePhase.DAY_VOTE_FINAL);
+    addLog("دفاعیه به پایان رسید. رای‌گیری نهایی آغاز می‌شود.");
+  };
+
+  const handleFinalVote = () => {
+    let eliminatedPlayer: string | null = null;
+    let wasEliminated = false;
+
+    if (playersOnTrial.length === 1) {
+        const trialist = playersOnTrial[0];
+        const votes = finalVotes[trialist] || 0;
+        const votesNeeded = Math.ceil(livingPlayers.length / 2);
+        if (votes >= votesNeeded) {
+            eliminatedPlayer = trialist;
+        } else {
+            addLog(`<strong class='text-green-400'>${trialist}</strong> رای کافی برای حذف را کسب نکرد و در بازی باقی ماند.`);
+        }
+    } else if (playersOnTrial.length > 1) {
+        let maxVotes = 0;
+        let playersWithMaxVotes: string[] = [];
+        
+        playersOnTrial.forEach(name => {
+            const votes = finalVotes[name] || 0;
+            if (votes > maxVotes) {
+                maxVotes = votes;
+                playersWithMaxVotes = [name];
+            } else if (votes === maxVotes && maxVotes > 0) {
+                playersWithMaxVotes.push(name);
+            }
+        });
+
+        if (playersWithMaxVotes.length === 1 && maxVotes > 0) {
+            eliminatedPlayer = playersWithMaxVotes[0];
+        } else {
+            addLog("در رای‌گیری نهایی، هیچ بازیکنی برای حذف مشخص نشد (آرای برابر یا عدم رای).");
+        }
+    }
+
+    let currentPlayers = [...players];
+    if (eliminatedPlayer) {
+        wasEliminated = true;
+        currentPlayers = players.map(p => p.name === eliminatedPlayer ? {...p, isAlive: false} : p)
+        setPlayers(currentPlayers);
+        addLog(`<strong class='text-yellow-400'>${eliminatedPlayer}</strong> با رای‌گیری در روز حذف شد.`);
+    }
+
+    handleEndDay(wasEliminated, currentPlayers);
+  };
+  
+  const handleEndDay = (wasPlayerEliminated: boolean, currentPlayers: Player[] = players) => {
     if (checkWinCondition()) return;
 
+    if (wasPlayerEliminated) {
+        addLog(`<strong>پایان روز ${day}.</strong> وصیت بازیکن شنیده می‌شود.`);
+    } else {
+        addLog(`<strong>پایان روز ${day}.</strong> بازیکنی در رای‌گیری حذف نشد.`);
+    }
+
     const snapshot: GameState = {
-        players: JSON.parse(JSON.stringify(players)),
+        players: JSON.parse(JSON.stringify(currentPlayers)),
         day: day,
         pollUsed,
-        gamePhase: GamePhase.NIGHT_MAF_ACTION,
-        logLength: log.length,
+        gamePhase: GamePhase.NIGHT_MAF_CONSULT,
+        logLength: log.length + 2, // Account for the two messages we are about to add
     };
     setHistory(prev => [...prev, snapshot]);
-
-    setGamePhase(GamePhase.NIGHT_MAF_ACTION);
+    
+    setNominationVotes({});
+    setPlayersOnTrial([]);
+    setFinalVotes({});
+    setGamePhase(GamePhase.NIGHT_MAF_CONSULT);
     addLog(`شب ${day} آغاز می‌شود.`);
   };
 
@@ -644,27 +730,39 @@ const App: React.FC = () => {
   };
 
   const renderPhase = () => {
+    const votesNeeded = Math.ceil(livingPlayers.length / 2);
     switch (gamePhase) {
       case GamePhase.ROLE_REVEAL:
         return <RoleRevealPhase players={players} onStartFirstDay={handleStartFirstDay} viewedPlayers={viewedPlayers} setViewedPlayers={setViewedPlayers} />;
-      case GamePhase.NIGHT_MAF_ACTION:
-        return <NightMafiaActionPhase livingMafia={livingMafia} livingPlayers={livingPlayers} onSubmit={handleMafiaActionSubmit} />;
+      case GamePhase.NIGHT_MAF_CONSULT:
+        return <NightMafiaConsultPhase livingMafia={livingMafia} onConsultationEnd={handleConsultationEnd} />;
       case GamePhase.NIGHT_IND_ACTION:
         return <NightIndividualActionPhase livingPlayers={livingPlayers} onSubmit={handleIndividualActionSubmit} />;
       case GamePhase.NIGHT_GUN_TRANSFER:
         return <NightGunTransferPhase nightResult={nightResult} players={players} onSubmit={handleGunTransferSubmit} />;
-      case GamePhase.DAY:
-        const votesNeeded = Math.ceil(livingPlayers.length / 2);
-        return <DayPhase
+      case GamePhase.DAY_VOTE_NOMINATION:
+        return <DayNominationPhase
                     day={day}
                     onPoll={handlePoll}
                     pollUsed={pollUsed}
                     players={players}
                     onUseGun={handleDayGunUse}
-                    onStartTrial={handleStartTrial}
-                    onEndDay={handleEndDay}
+                    onEndNominations={handleEndNominations}
+                    onEndDay={() => handleEndDay(false)}
                     votesNeeded={votesNeeded}
+                    nominationVotes={nominationVotes}
+                    setNominationVotes={setNominationVotes}
                     />;
+      case GamePhase.DAY_TRIAL:
+        return <DayTrialPhase playersOnTrial={livingPlayers.filter(p => playersOnTrial.includes(p.name))} onTrialEnd={handleTrialEnd} />
+      case GamePhase.DAY_VOTE_FINAL:
+        return <DayFinalVotePhase 
+                  playersOnTrial={livingPlayers.filter(p => playersOnTrial.includes(p.name))}
+                  livingPlayersCount={livingPlayers.length}
+                  finalVotes={finalVotes}
+                  setFinalVotes={setFinalVotes}
+                  onEndFinalVote={handleFinalVote}
+                />
       case GamePhase.END:
         return <EndGameReport log={log} players={players} onReset={handleResetGame} />;
       default:
@@ -832,143 +930,89 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {isDefenseModalOpen && playerOnTrial && (
-            <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-                <div className="bg-gray-800 rounded-lg p-8 shadow-2xl border border-gray-700 max-w-md w-full text-center">
-                    <GavelIcon className="h-12 w-12 mx-auto text-yellow-400 mb-4" />
-                    <h3 className="text-2xl font-bold mb-2">دفاعیه برای <strong className="text-yellow-300">{playerOnTrial.name}</strong></h3>
-                    <p className="text-gray-400 mb-6">بازیکن ۶۰ ثانیه فرصت دارد تا از خود دفاع کند.</p>
-                    
-                    <div className="text-6xl font-mono text-white my-4 p-4 bg-gray-900/50 rounded-lg">
-                        {defenseTimer}
-                    </div>
-
-                    <p className="text-sm text-gray-500 mb-6">پس از پایان دفاعیه، گرداننده تصمیم نهایی را اعلام می‌کند.</p>
-                    
-                    <div className="flex gap-4">
-                        <button
-                            onClick={handleAcquitPlayer}
-                            className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded transition-colors"
-                        >
-                            تبرئه
-                        </button>
-                        <button
-                            onClick={() => handleEliminationByVote(playerOnTrial.name)}
-                            className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded transition-colors"
-                        >
-                            حذف بازیکن
-                        </button>
-                    </div>
-                </div>
+        {isPollModalOpen && pollResults && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+            <div className="bg-gray-800 rounded-lg p-8 shadow-2xl border border-gray-700 max-w-sm w-full text-center">
+              <h3 className="text-2xl font-bold mb-4 text-blue-400">نتیجه استعلام</h3>
+              <div className="space-y-4 text-lg my-6">
+                <p>تعداد مافیای خارج شده: <strong className="text-red-400 text-xl">{pollResults.mafia}</strong></p>
+                <p>تعداد شهروندان خارج شده: <strong className="text-blue-400 text-xl">{pollResults.citizens}</strong></p>
+              </div>
+              <button
+                onClick={() => setIsPollModalOpen(false)}
+                className="w-full bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 rounded transition-colors"
+              >
+                تایید
+              </button>
             </div>
+          </div>
         )}
 
-      </div>
-      <footer className="text-center text-xs text-gray-500 py-2 flex flex-col items-center justify-center gap-2">
-          <span>Design with AI by <a href="https://eparsa.ir" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-red-500 transition-colors">eParsa.ir</a></span>
-          <div className="flex items-center gap-4">
-              <a href="https://api.whatsapp.com/send?phone=989393783832" target="_blank" rel="noopener noreferrer" title="WhatsApp" className="text-gray-400 hover:text-green-500 transition-colors">
-                  <WhatsAppIcon className="h-5 w-5" />
-              </a>
-              <a href="https://t.me/spiderboy" target="_blank" rel="noopener noreferrer" title="Telegram" className="text-gray-400 hover:text-blue-500 transition-colors">
-                  <TelegramIcon className="h-5 w-5" />
-              </a>
+        {gunshotResult && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+            <div className="bg-gray-800 rounded-lg p-8 shadow-2xl border border-gray-700 max-w-sm w-full text-center">
+              <h3 className="text-2xl font-bold mb-4 text-yellow-400">نتیجه شلیک</h3>
+              <p className="my-6 text-lg" dangerouslySetInnerHTML={{ __html: gunshotResult }} />
+              <button
+                onClick={() => setGunshotResult(null)}
+                className="w-full bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 rounded transition-colors"
+              >
+                تایید
+              </button>
+            </div>
           </div>
-      </footer>
+        )}
+
+        {newGunsAlert !== null && newGunsAlert > 0 && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+            <div className="bg-gray-800 rounded-lg p-8 shadow-2xl border border-gray-700 max-w-sm w-full text-center">
+              <h3 className="text-2xl font-bold mb-4 text-purple-400">اسلحه‌های جدید</h3>
+              <p className="my-6 text-lg">
+                <strong className="text-xl">{newGunsAlert}</strong> اسلحه جدید در این روز وارد بازی شد.
+              </p>
+              <button
+                onClick={() => setNewGunsAlert(null)}
+                className="w-full bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 rounded transition-colors"
+              >
+                تایید
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+      <Footer />
     </div>
   );
 };
 
+const NightMafiaConsultPhase: React.FC<{livingMafia: Player[], onConsultationEnd: () => void}> = ({livingMafia, onConsultationEnd}) => {
+    const [timer, setTimer] = useState(30);
 
-const NightMafiaActionPhase: React.FC<{livingMafia: Player[], livingPlayers: Player[], onSubmit: (target: string | null, shooter: string | null, saves: string[]) => void}> = ({livingMafia, livingPlayers, onSubmit}) => {
-    const [target, setTarget] = useState('');
-    const [shooter, setShooter] = useState('');
-    const [saves, setSaves] = useState<string[]>([]);
-    
-    const canMafiaShoot = livingMafia.some(p => p.hasGun);
-
-    const handleSaveToggle = (playerName: string) => {
-        setSaves(prev => {
-            const mafiaWithSave = livingMafia.find(p => p.name === playerName && p.hasSave);
-            if (!mafiaWithSave) return prev;
-    
-            const currentSaves = prev.filter(name => {
-                const saver = livingMafia.find(p => p.name === name);
-                return saver && saver.hasSave;
-            });
-    
-            if (currentSaves.includes(playerName)) {
-                return currentSaves.filter(n => n !== playerName);
-            } else {
-                const availableSavers = livingMafia.filter(p => p.hasSave).length;
-                if (currentSaves.length < availableSavers) {
-                    return [...currentSaves, playerName];
-                }
-            }
-            return prev;
-        });
-    };
-    
-    const handleSubmit = () => {
-        if (target === '_NO_SHOT_') {
-            onSubmit(null, null, saves);
-            return;
-        }
-
-        if (target && shooter) {
-            const shooterPlayer = livingMafia.find(p => p.name === shooter);
-            if(shooterPlayer && !shooterPlayer.hasGun) {
-                alert('شات‌زن انتخابی اسلحه ندارد.');
-                return;
-            }
-            onSubmit(target, shooter, saves);
+    useEffect(() => {
+        if (timer > 0) {
+            const timerId = setTimeout(() => setTimer(timer - 1), 1000);
+            return () => clearTimeout(timerId);
         } else {
-            if (!canMafiaShoot) {
-                onSubmit(null, null, saves);
-            } else {
-                alert('لطفا هدف شات و شات‌زن را مشخص کنید، یا گزینه "عدم شلیک تیر" را انتخاب کنید.');
-            }
+            onConsultationEnd();
         }
-    }
-    
+    }, [timer, onConsultationEnd]);
+
     return (
-        <div className="p-4">
-            <h2 className="text-xl font-bold mb-4 text-center">اقدامات تیم مافیا</h2>
-            <div className="space-y-4">
-                <div>
-                    <label className="block mb-1 font-semibold">شات شب به:</label>
-                    <select value={target} onChange={e => {
-                      setTarget(e.target.value);
-                      if (e.target.value === '_NO_SHOT_') {
-                        setShooter('');
-                      }
-                    }} className="w-full bg-gray-700 p-2 rounded">
-                        <option value="">انتخاب هدف</option>
-                        <option value="_NO_SHOT_">عدم شلیک تیر</option>
-                        {livingPlayers.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
-                    </select>
-                </div>
-                <div>
-                    <label className="block mb-1 font-semibold">توسط:</label>
-                    <select value={shooter} onChange={e => setShooter(e.target.value)} className="w-full bg-gray-700 p-2 rounded" disabled={target === '_NO_SHOT_' || !canMafiaShoot}>
-                        <option value="">انتخاب شات‌زن</option>
-                        {livingMafia.map(p => <option key={p.id} value={p.name} disabled={!p.hasGun}>{p.name} {p.hasGun ? "" : "(شات ندارد)"}</option>)}
-                    </select>
-                    {!canMafiaShoot && <p className="text-sm text-yellow-400 mt-1">هیچ مافیایی اسلحه برای شلیک ندارد.</p>}
-                </div>
-                <div>
-                    <label className="block mb-1 font-semibold">سیو مافیا (بازیکنان دارای سیو):</label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                        {livingMafia.map(mafia => (
-                            <button key={mafia.id} onClick={() => handleSaveToggle(mafia.name)} disabled={!mafia.hasSave} className={`p-2 rounded transition-colors ${saves.includes(mafia.name) ? 'bg-green-600' : 'bg-gray-600'} disabled:bg-gray-800 disabled:text-gray-500`}>
-                                سیو {mafia.name}
-                            </button>
-                        ))}
-                    </div>
-                     {saves.length > 0 && <p className="mt-2 text-sm text-gray-400">سیو برای: {saves.join(', ')}</p>}
-                </div>
-                <button onClick={handleSubmit} className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded mt-4">ثبت اقدامات مافیا</button>
+        <div className="p-4 text-center">
+            <h2 className="text-xl font-bold mb-4">مشورت تیم مافیا</h2>
+            <p className="text-gray-400 mb-6">تیم مافیا ۳۰ ثانیه فرصت دارد تا برای اقدامات شب با یکدیگر مشورت کنند.</p>
+            <div className="text-6xl font-mono text-white my-4 p-4 bg-gray-900/50 rounded-lg">
+                {timer}
             </div>
+            <div className="mb-4">
+                <h3 className="font-semibold text-lg">اعضای زنده مافیا:</h3>
+                <div className="flex justify-center flex-wrap gap-4 mt-2">
+                    {livingMafia.map(m => <span key={m.id} className="bg-red-900/50 text-red-300 px-3 py-1 rounded-full">{m.name}</span>)}
+                </div>
+            </div>
+            <button onClick={onConsultationEnd} className="w-full max-w-sm mx-auto bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded mt-4">
+                پایان مشورت و شروع عملیات انفرادی
+            </button>
         </div>
     );
 };
@@ -1010,13 +1054,13 @@ const NightIndividualActionPhase: React.FC<{ livingPlayers: Player[], onSubmit: 
         const playerNames = livingPlayers.map(p => p.name).join(', ');
 
         const prompt = `
-            شما دستیار یک بازی مافیا هستید. وظیفه شما این است که گزارش گاد بازی از وقایع شب را بخوانید و آن را به یک ساختار JSON تبدیل کنید.
-            فقط اقدامات بازیکنان شهروند را در نظر بگیرید. اقدامات مافیا در مرحله جداگانه‌ای انجام شده است.
-            بازیکنان زنده عبارتند از: ${playerNames}.
-            گزارش گاد: "${gmNarration}"
+            You are a Mafia game assistant. Your task is to read the game master's report of the night's events and convert it into a JSON structure.
+            Consider actions from ALL players (Mafia and Citizens).
+            The living players are: ${playerNames}.
+            The GM's report is: "${gmNarration}"
 
-            اقدامات ممکن "shot" (شلیک) و "save" (نجات) هستند. هر بازیکن می‌تواند خودش را نجات دهد.
-            نام بازیکنان را دقیقاً همانطور که در لیست آمده است برگردانید.
+            Possible actions are "shot" and "save". Players can save themselves.
+            Return player names exactly as they appear in the list.
         `;
         
         const actionSchema = {
@@ -1024,21 +1068,21 @@ const NightIndividualActionPhase: React.FC<{ livingPlayers: Player[], onSubmit: 
             properties: {
                 actions: {
                     type: Type.ARRAY,
-                    description: "لیستی از تمام اقدامات انجام شده در شب.",
+                    description: "A list of all actions performed during the night.",
                     items: {
                         type: Type.OBJECT,
                         properties: {
                             actor: {
                                 type: Type.STRING,
-                                description: `نام بازیکنی که اقدام را انجام داده است. باید یکی از اینها باشد: ${playerNames}`
+                                description: `The name of the player performing the action. Must be one of: ${playerNames}`
                             },
                             actionType: {
                                 type: Type.STRING,
-                                description: "نوع اقدام، 'shot' یا 'save'."
+                                description: "The type of action, either 'shot' or 'save'."
                             },
                             target: {
                                 type: Type.STRING,
-                                description: `هدف اقدام. باید یکی از اینها باشد: ${playerNames}`
+                                description: `The target of the action. Must be one of: ${playerNames}`
                             }
                         },
                         required: ["actor", "actionType", "target"]
@@ -1070,7 +1114,7 @@ const NightIndividualActionPhase: React.FC<{ livingPlayers: Player[], onSubmit: 
                     const actorPlayer = livingPlayers.find(p => p.name === action.actor);
 
                     if (actorExists && targetExists && actorPlayer) {
-                         if (action.actionType === 'shot' && actorPlayer.hasGun && actorPlayer.role === Role.CITIZEN) {
+                         if (action.actionType === 'shot' && actorPlayer.hasGun) {
                             newActions[action.actor] = { ...newActions[action.actor], shot: action.target };
                             updatedFields.add(`${action.actor}-shot`);
                         } else if (action.actionType === 'save' && actorPlayer.hasSave) {
@@ -1103,8 +1147,8 @@ const NightIndividualActionPhase: React.FC<{ livingPlayers: Player[], onSubmit: 
                     دستیار هوش مصنوعی گاد (اختیاری)
                 </summary>
                 <div className="p-4 border-t border-gray-700">
-                    <p className="text-sm text-gray-400 mb-2">وقایع شب (فقط اقدامات شهروندان) را به زبان فارسی ساده بنویسید تا فرم زیر به صورت خودکار پر شود.</p>
-                    <p className="text-xs text-gray-500 mb-2">مثال: "رضا به سارا شلیک کرد. مریم خودش را سیو کرد."</p>
+                    <p className="text-sm text-gray-400 mb-2">وقایع شب را به زبان فارسی ساده بنویسید تا فرم زیر به صورت خودکار پر شود.</p>
+                    <p className="text-xs text-gray-500 mb-2">مثال: "رضا (مافیا) به سارا شلیک کرد. مریم خودش را سیو کرد."</p>
                     <textarea
                         value={gmNarration}
                         onChange={(e) => setGmNarration(e.target.value)}
@@ -1128,7 +1172,7 @@ const NightIndividualActionPhase: React.FC<{ livingPlayers: Player[], onSubmit: 
 
             <div className="space-y-4 max-h-[45vh] overflow-y-auto pr-2">
                 {livingPlayers.map(p => (
-                    <div key={p.id} className="bg-gray-700 p-3 rounded-lg">
+                    <div key={p.id} className={`p-3 rounded-lg ${p.role === Role.MAFIA ? 'bg-red-900/40 border border-red-800' : 'bg-blue-900/40 border border-blue-800'}`}>
                         <h3 className="font-bold text-lg mb-2 text-gray-200">{p.name}</h3>
                         <div className="grid grid-cols-2 gap-2">
                             <div>
@@ -1136,14 +1180,13 @@ const NightIndividualActionPhase: React.FC<{ livingPlayers: Player[], onSubmit: 
                                 <select
                                     value={actions[p.name]?.shot || ''}
                                     onChange={(e) => handleActionChange(p.name, 'shot', e.target.value || null)}
-                                    disabled={!p.hasGun || p.role !== Role.CITIZEN}
+                                    disabled={!p.hasGun}
                                     className={`w-full bg-gray-600 p-1 rounded text-sm mt-1 ${aiUpdatedFields.has(`${p.name}-shot`) ? 'ring-2 ring-purple-500 transition-all' : ''} disabled:opacity-50`}
                                 >
                                     <option value="">انتخاب هدف</option>
                                     {livingPlayers.map(target => <option key={target.id} value={target.name}>{target.name}</option>)}
                                 </select>
-                                {!p.hasGun && p.role === Role.CITIZEN && <span className="text-xs text-yellow-500">اسلحه ندارد</span>}
-                                {p.role === Role.MAFIA && <span className="text-xs text-gray-500">مافیا</span>}
+                                {!p.hasGun && <span className="text-xs text-yellow-500">اسلحه ندارد</span>}
                             </div>
                             <div>
                                 <label className="text-xs text-gray-400 block">سیو:</label>
@@ -1248,25 +1291,23 @@ const NightGunTransferPhase: React.FC<{
     );
 };
 
-const DayPhase: React.FC<{
+const DayNominationPhase: React.FC<{
     day: number;
     onPoll: () => void;
     pollUsed: number;
     players: Player[];
     onUseGun: (shooterName: string, targetName: string | null, gunIndex: number) => void;
-    onStartTrial: (playerName: string) => void;
+    onEndNominations: () => void;
     onEndDay: () => void;
     votesNeeded: number;
-}> = ({ day, onPoll, pollUsed, players, onUseGun, onStartTrial, onEndDay, votesNeeded }) => {
+    nominationVotes: Record<string, number>;
+    setNominationVotes: React.Dispatch<React.SetStateAction<Record<string, number>>>;
+}> = ({ day, onPoll, pollUsed, players, onUseGun, onEndNominations, onEndDay, votesNeeded, nominationVotes, setNominationVotes }) => {
     
     const livingPlayers = players.filter(p => p.isAlive);
     const playersWithGuns = livingPlayers.filter(p => p.receivedGuns && p.receivedGuns.length > 0);
 
     const [gunUse, setGunUse] = useState<{ shooter: string, gunIndex: number, target: string | null } | null>(null);
-
-    const handleGunUseClick = (shooter: string, gunIndex: number) => {
-        setGunUse({ shooter, gunIndex, target: null });
-    };
 
     const confirmGunUse = () => {
         if (gunUse) {
@@ -1274,12 +1315,19 @@ const DayPhase: React.FC<{
             setGunUse(null);
         }
     };
+    
+    const handleVoteChange = (playerName: string, delta: number) => {
+        setNominationVotes(prev => ({
+            ...prev,
+            [playerName]: Math.max(0, (prev[playerName] || 0) + delta)
+        }));
+    };
 
     return (
         <div className="p-4">
-            <h2 className="text-xl font-bold mb-4 text-center">روز {day}</h2>
+            <h2 className="text-xl font-bold mb-4 text-center">روز {day} - مرحله اول رای‌گیری (اتهام)</h2>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <button
                     onClick={onPoll}
                     disabled={pollUsed >= 2}
@@ -1289,7 +1337,7 @@ const DayPhase: React.FC<{
                 </button>
                 <button
                     onClick={onEndDay}
-                    className="col-span-1 md:col-span-2 bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-4 rounded transition-colors"
+                    className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-4 rounded transition-colors"
                 >
                     پایان روز و رفتن به شب
                 </button>
@@ -1303,7 +1351,7 @@ const DayPhase: React.FC<{
                             p.receivedGuns?.map((gun, index) => (
                                 <button
                                     key={`${p.id}-${index}`}
-                                    onClick={() => handleGunUseClick(p.name, index)}
+                                    onClick={() => setGunUse({ shooter: p.name, gunIndex: index, target: null })}
                                     className="bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold py-1 px-3 rounded"
                                 >
                                     {p.name} (اسلحه {gun})
@@ -1315,20 +1363,28 @@ const DayPhase: React.FC<{
             )}
             
             <div className="mb-6">
-                <h3 className="font-bold text-lg mb-2 text-yellow-300">رای‌گیری برای حذف</h3>
-                <p className="text-sm text-gray-400 mb-4">برای اخراج یک بازیکن، او باید حداقل {votesNeeded} رای بیاورد. روی نام بازیکن کلیک کنید تا او را برای دفاعیه به جایگاه بفرستید.</p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                <h3 className="font-bold text-lg mb-2 text-yellow-300">رای‌گیری برای دفاعیه</h3>
+                <p className="text-sm text-gray-400 mb-4">برای فرستادن یک بازیکن به دفاعیه، او باید حداقل {votesNeeded} رای بیاورد. از دکمه‌های +/- برای ثبت آرا استفاده کنید.</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {livingPlayers.map(p => (
-                        <button
-                            key={p.id}
-                            onClick={() => onStartTrial(p.name)}
-                            className="bg-yellow-700/50 hover:bg-yellow-600/50 border border-yellow-700 text-yellow-200 font-semibold py-3 px-2 rounded transition-colors text-sm truncate"
-                        >
-                            {p.name}
-                        </button>
+                        <div key={p.id} className="bg-gray-700/50 p-3 rounded-lg flex flex-col items-center">
+                            <span className="font-semibold truncate mb-2">{p.name}</span>
+                            <div className="flex items-center gap-3">
+                                <button onClick={() => handleVoteChange(p.name, -1)} className="bg-red-600 w-7 h-7 rounded-full font-bold">-</button>
+                                <span className="text-xl font-mono w-8 text-center">{nominationVotes[p.name] || 0}</span>
+                                <button onClick={() => handleVoteChange(p.name, 1)} className="bg-green-600 w-7 h-7 rounded-full font-bold">+</button>
+                            </div>
+                        </div>
                     ))}
                 </div>
             </div>
+            
+            <button
+              onClick={onEndNominations}
+              className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-4 rounded transition-colors"
+            >
+              اعلام نتایج و رفتن به دفاعیه
+            </button>
 
             {gunUse && (
                  <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
@@ -1370,5 +1426,195 @@ const DayPhase: React.FC<{
         </div>
     );
 };
+
+const DayTrialPhase: React.FC<{ playersOnTrial: Player[]; onTrialEnd: () => void; }> = ({ playersOnTrial, onTrialEnd }) => {
+    const [timer, setTimer] = useState(60);
+
+    useEffect(() => {
+        if (timer > 0) {
+            const timerId = setTimeout(() => setTimer(timer - 1), 1000);
+            return () => clearTimeout(timerId);
+        }
+    }, [timer]);
+
+    const resetTimer = () => {
+        setTimer(60);
+    };
+
+    return (
+        <div className="p-4 text-center">
+            <GavelIcon className="h-12 w-12 mx-auto text-yellow-400 mb-4" />
+            <h2 className="text-xl font-bold mb-4">دفاعیه</h2>
+            <p className="text-gray-400 mb-6">بازیکنان زیر ۶۰ ثانیه فرصت دارند تا از خود دفاع کنند.</p>
+            <div className="flex justify-center flex-wrap gap-4 mt-2 mb-6">
+                {playersOnTrial.map(p => <span key={p.id} className="bg-yellow-900/50 text-yellow-300 px-4 py-2 rounded-full text-lg">{p.name}</span>)}
+            </div>
+            <div className="flex items-center justify-center gap-4">
+                <div className="text-6xl font-mono text-white my-4 p-4 bg-gray-900/50 rounded-lg">
+                    {timer}
+                </div>
+                <button onClick={resetTimer} title="ریست تایمر" className="bg-gray-600 hover:bg-gray-500 text-white font-bold p-3 rounded-full transition-colors">
+                    <RefreshIcon className="h-6 w-6" />
+                </button>
+            </div>
+            <button onClick={onTrialEnd} className="w-full max-w-sm mx-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded mt-4">
+                پایان دفاعیه و شروع رای‌گیری نهایی
+            </button>
+        </div>
+    );
+};
+
+const DayFinalVotePhase: React.FC<{
+    playersOnTrial: Player[];
+    livingPlayersCount: number;
+    finalVotes: Record<string, number>;
+    setFinalVotes: React.Dispatch<React.SetStateAction<Record<string, number>>>;
+    onEndFinalVote: () => void;
+}> = ({ playersOnTrial, livingPlayersCount, finalVotes, setFinalVotes, onEndFinalVote }) => {
+    const votesNeeded = Math.ceil(livingPlayersCount / 2);
+
+    const handleVoteChange = (playerName: string, delta: number) => {
+        setFinalVotes(prev => ({
+            ...prev,
+            [playerName]: Math.max(0, (prev[playerName] || 0) + delta)
+        }));
+    };
+
+    return (
+        <div className="p-4">
+            <h2 className="text-xl font-bold mb-4 text-center">مرحله نهایی رای‌گیری (اخراج)</h2>
+            {playersOnTrial.length === 1 ? (
+                <p className="text-center text-gray-400 mb-4">برای حذف <strong className="text-white">{playersOnTrial[0].name}</strong>، او باید حداقل {votesNeeded} رای بیاورد.</p>
+            ) : (
+                <p className="text-center text-gray-400 mb-4">بازیکنی که بیشترین رای را بیاورد از بازی حذف خواهد شد.</p>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                {playersOnTrial.map(p => (
+                    <div key={p.id} className="bg-gray-700/50 p-4 rounded-lg flex flex-col items-center">
+                        <span className="font-bold text-lg truncate mb-3">{p.name}</span>
+                        <div className="flex items-center gap-4">
+                            <button onClick={() => handleVoteChange(p.name, -1)} className="bg-red-600 w-8 h-8 rounded-full font-bold text-lg">-</button>
+                            <span className="text-2xl font-mono w-10 text-center">{finalVotes[p.name] || 0}</span>
+                            <button onClick={() => handleVoteChange(p.name, 1)} className="bg-green-600 w-8 h-8 rounded-full font-bold text-lg">+</button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <button
+                onClick={onEndFinalVote}
+                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded transition-colors"
+            >
+                اعلام نتیجه نهایی و حذف بازیکن
+            </button>
+        </div>
+    );
+};
+
+const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
+  <section>
+    <h3 className="text-xl font-bold text-yellow-300 mb-3 pb-2 border-b-2 border-gray-700">{title}</h3>
+    <div className="space-y-2">
+      {children}
+    </div>
+  </section>
+);
+
+const HelpModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+  return (
+    <div 
+      className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4" 
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="help-title"
+    >
+      <div 
+        className="bg-gray-800 rounded-lg shadow-2xl border border-gray-700 max-w-3xl w-full h-[90vh] flex flex-col"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex justify-between items-center p-4 border-b border-gray-700 flex-shrink-0">
+          <h2 id="help-title" className="text-2xl font-bold text-red-500">راهنمای سناریو مافیا مینیمال</h2>
+          <button 
+            onClick={onClose} 
+            className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded"
+            aria-label="بستن راهنما"
+          >
+            بستن
+          </button>
+        </div>
+        <div className="p-6 text-gray-300 overflow-y-auto space-y-6">
+          <Section title="معرفی سناریو">
+            <p>
+              مافیا مینیمال یک سناریوی سریع و هیجان‌انگیز است که بر پایه قابلیت‌های یکسان برای تمام بازیکنان طراحی شده. در این سناریو، نقش‌های پیچیده وجود ندارد و همه بازیکنان، چه شهروند و چه مافیا، با یک شات و یک سیو بازی را آغاز می‌کنند. این برابری قابلیت‌ها، بازی را به سمت استدلال، بلوف و تحلیل رفتار بازیکنان سوق می‌دهد.
+            </p>
+          </Section>
+          
+          <Section title="نقش‌ها">
+            <ul className="list-disc pr-6 space-y-2">
+              <li><strong className="text-blue-400">شهروند (Citizen):</strong> هدف شهروندان شناسایی و حذف تمام اعضای مافیا از بازی است. آن‌ها باید با همکاری و تحلیل درست، مافیاها را در روز با رای‌گیری حذف کنند.</li>
+              <li><strong className="text-red-400">مافیا (Mafia):</strong> هدف تیم مافیا این است که تعدادشان با شهروندان برابر یا از آن‌ها بیشتر شود. اعضای مافیا یکدیگر را می‌شناسند و در شب برای هماهنگی شلیک‌هایشان با هم مشورت می‌کنند.</li>
+            </ul>
+          </Section>
+
+          <Section title="قابلیت‌های اولیه بازیکنان">
+            <p>هر بازیکن در ابتدای بازی دارای دو قابلیت یکبار مصرف است:</p>
+            <ul className="list-disc pr-6 space-y-2 mt-2">
+              <li><strong className="text-yellow-400">یک شلیک (Shot):</strong> هر بازیکن می‌تواند یک بار در طول بازی در فاز شب به بازیکن دیگری شلیک کند.</li>
+              <li><strong className="text-green-400">یک سیو (Save):</strong> هر بازیکن می‌تواند یک بار در طول بازی در فاز شب، خود یا بازیکن دیگری را از شلیک نجات دهد.</li>
+            </ul>
+          </Section>
+
+          <Section title="مراحل بازی">
+            <h4 className="text-lg font-semibold text-gray-100 mt-4 mb-2">فاز شب</h4>
+            <ol className="list-decimal pr-6 space-y-2">
+              <li><strong>مشورت مافیا:</strong> مافیاها به مدت ۳۰ ثانیه با هم مشورت می‌کنند تا اهداف شب را مشخص کنند.</li>
+              <li><strong>اقدامات انفرادی:</strong> تمام بازیکنان (شهروند و مافیا) بیدار شده و به صورت مخفیانه از قابلیت‌های شلیک یا سیو خود (در صورت داشتن) استفاده می‌کنند.</li>
+              <li><strong>رسیدگی به نتایج:</strong>
+                <ul className="list-disc pr-6 mt-1">
+                    <li>سیوها شلیک‌ها را خنثی می‌کنند. اگر تعداد سیو روی یک نفر برابر یا بیشتر از تعداد شلیک‌ها باشد، آن فرد زنده می‌ماند.</li>
+                    <li><strong>فایربک (Fireback):</strong> اگر یک شهروند به شهروند دیگری شلیک کند، خود شلیک‌کننده از بازی حذف می‌شود.</li>
+                </ul>
+              </li>
+              <li><strong>انتقال اسلحه:</strong> اگر بازیکنی که در شب حذف می‌شود اسلحه استفاده نشده داشته باشد، باید وصیت کرده و آن را به یک بازیکن زنده بدهد. بازیکن نوع اسلحه (سالم یا خرابکاری‌شده) را مشخص می‌کند.</li>
+            </ol>
+            
+            <h4 className="text-lg font-semibold text-gray-100 mt-4 mb-2">فاز روز</h4>
+            <ol className="list-decimal pr-6 space-y-2">
+              <li><strong>اعلام نتایج شب:</strong> گرداننده بازیکن یا بازیکنانی که در شب حذف شده‌اند را اعلام می‌کند.</li>
+              <li><strong>استفاده از اسلحه روز:</strong> بازیکنانی که اسلحه را از کشته شب دریافت کرده‌اند، می‌توانند در روز از آن استفاده کنند.
+                <ul className="list-disc pr-6 mt-1">
+                    <li><strong>اسلحه سالم (Correct):</strong> اگر به کسی شلیک شود، آن فرد حذف می‌شود.</li>
+                    <li><strong>اسلحه خرابکاری‌شده (Sabotaged):</strong> اگر به کسی شلیک شود، خود شلیک‌کننده حذف می‌شود.</li>
+                    <li><strong>تیر هوایی:</strong> بازیکن می‌تواند برای نمایش نقش خود یا اهداف دیگر، تیر هوایی شلیک کند که اثری ندارد.</li>
+                </ul>
+              </li>
+              <li><strong>رای‌گیری اول (اتهام):</strong> بازیکنان صحبت کرده و به افراد مشکوک رای می‌دهند. هرکس نصف + ۱ آرا را کسب کند، وارد دفاعیه می‌شود.</li>
+              <li><strong>دفاعیه:</strong> افراد متهم از خود دفاع می‌کنند.</li>
+              <li><strong>رای‌گیری نهایی (اخراج):</strong> برای اخراج متهمان رای‌گیری می‌شود. در حالت تک‌دفاعی، فرد برای حذف به نصف + ۱ آرا نیاز دارد. در حالت چنددفاعی، هرکس بیشترین رای را بیاورد حذف می‌شود.</li>
+            </ol>
+          </Section>
+          
+          <Section title="قابلیت‌های گرداننده">
+             <ul className="list-disc pr-6 space-y-2">
+                <li><strong>استعلام:</strong> گرداننده دو بار در طول بازی می‌تواند تعداد مافیا و شهروندان خارج شده از بازی را اعلام کند.</li>
+                <li><strong>اخراج انضباطی:</strong> گرداننده می‌تواند به دلایل انضباطی بازیکنی را از بازی حذف کند.</li>
+                <li><strong>بازگشت به گذشته:</strong> این ابزار به گرداننده اجازه می‌دهد در صورت بروز اشتباه، بازی را به ابتدای فازهای قبلی برگرداند.</li>
+             </ul>
+          </Section>
+
+          <Section title="شرایط پیروزی">
+             <ul className="list-disc pr-6 space-y-2">
+              <li><strong className="text-blue-400">پیروزی شهروندان:</strong> تمام اعضای مافیا از بازی حذف شوند.</li>
+              <li><strong className="text-red-400">پیروزی مافیا:</strong> تعداد مافیاهای زنده با تعداد شهروندان زنده برابر یا از آن بیشتر شود.</li>
+            </ul>
+          </Section>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 
 export default App;
